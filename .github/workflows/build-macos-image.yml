@@ -157,16 +157,17 @@ jobs:
           echo ""
           echo "CPU: $(sysctl -n machdep.cpu.brand_string)"
 
-      - name: Install and Connect Cloudflare Warp
+      - name: Setup Cloudflare Warp (Optional)
+        continue-on-error: true
         run: |
           brew install --cask cloudflare-warp
-          # Allow the background service to start
-          sleep 5
-          # Register and connect with TOS auto-accepted
-          warp-cli --accept-tos registration new
-          warp-cli --accept-tos connect
-          echo "Verifying Warp connection..."
-          curl -s https://www.cloudflare.com/cdn-cgi/trace | grep warp
+          # Force start the service daemon
+          sudo launchctl load -w /Library/LaunchDaemons/com.cloudflare.1dot1dot1dot1.macos.warp.daemon.plist || true
+          sleep 10
+          warp-cli --accept-tos registration new || true
+          warp-cli --accept-tos connect || true
+          echo "Warp Status:"
+          warp-cli --accept-tos status || echo "Warp CLI not responding"
 
       - name: Create macOS image
         id: create_image
@@ -197,16 +198,10 @@ jobs:
           elif [ "${{ job.status }}" == "success" ]; then
             if [ "${{ inputs.image_format }}" == "iso" ]; then
               echo "## Successfully built $(basename *.iso)" >> $GITHUB_STEP_SUMMARY
-              echo "" >> $GITHUB_STEP_SUMMARY
-              echo "> [!Important]" >> $GITHUB_STEP_SUMMARY
-              echo "> This ISO image is intended for creating macOS virtual machines on Proxmox VE, QEMU, VMware, and VirtualBox." >> $GITHUB_STEP_SUMMARY
             else
               echo "## Successfully built $(basename *.dmg.img)" >> $GITHUB_STEP_SUMMARY
-              echo "" >> $GITHUB_STEP_SUMMARY
-              echo "> [!Important]" >> $GITHUB_STEP_SUMMARY
-              echo '> This DMG image is intended for flashing to USB drive using [Rufus](https://rufus.ie/en/#download) *(Windows)* or `dd` *(Linux)*.' >> $GITHUB_STEP_SUMMARY
             fi
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "> [!TIP]" >> $GITHUB_STEP_SUMMARY
-            echo "> Enable [Cloudflare WARP](https://one.one.one.one/) for faster download from GitHub artifact." >> $GITHUB_STEP_SUMMARY
+            echo "> [!Important]" >> $GITHUB_STEP_SUMMARY
+            echo "Built image is ready for download in the Artifacts section."
           fi
