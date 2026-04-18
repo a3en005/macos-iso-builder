@@ -50,7 +50,6 @@ jobs:
             echo "_build=true" >> $GITHUB_OUTPUT
             exit 0
           fi
-
           FOUND=false
           PAGE=1
           while [ $PAGE -le 50 ]; do
@@ -62,7 +61,6 @@ jobs:
             [ "$(echo "$DATA" | grep -c '"login"')" -lt 100 ] && break
             PAGE=$((PAGE + 1))
           done
-
           if [ "$FOUND" = "false" ]; then
             if [ "$GITHUB_RUN_ATTEMPT" -eq 1 ]; then
               echo "## Before you build — check if someone already did it for you :point_down:" >> $GITHUB_STEP_SUMMARY
@@ -79,7 +77,6 @@ jobs:
               FOUND_ARTIFACT_NAME=""
               PAST_15_DAYS=$(date -u -d '15 days ago' +%Y-%m-%dT%H:%M:%SZ)
               PAGE=1
-
               while true; do
                 FORKS=$(curl -s \
                   -H "Accept: application/vnd.github+json" \
@@ -118,7 +115,6 @@ jobs:
                 done < <(echo "$RECENT")
                 PAGE=$((PAGE + 1))
               done
-
               if [ -n "$FOUND_RUN_URL" ]; then
                 echo "## Found **${FOUND_ARTIFACT_NAME}** in a recent fork" >> $GITHUB_STEP_SUMMARY
                 echo "**[${FOUND_RUN_URL}](${FOUND_RUN_URL})**" >> $GITHUB_STEP_SUMMARY
@@ -139,7 +135,6 @@ jobs:
             fi
             exit 0
           fi
-
           echo "_build=true" >> $GITHUB_OUTPUT
 
   build-macos-image:
@@ -162,6 +157,9 @@ jobs:
           echo "RAM: $(top -l 1 | grep PhysMem)"
           echo ""
           echo "CPU: $(sysctl -n machdep.cpu.brand_string)"
+
+      - name: Setup Cloudflare Warp
+        uses: Boostport/setup-cloudflare-warp@v1.17.1
 
       - name: Create macOS image
         id: create_image
