@@ -45,7 +45,6 @@ jobs:
       - name: Preflight
         id: check
         run: |
-          # Third time's the charm
           if [ "$GITHUB_RUN_ATTEMPT" -ge 3 ]; then
             echo "_build=true" >> $GITHUB_OUTPUT
             exit 0
@@ -158,8 +157,16 @@ jobs:
           echo ""
           echo "CPU: $(sysctl -n machdep.cpu.brand_string)"
 
-      - name: Setup Cloudflare Warp
-        uses: Boostport/setup-cloudflare-warp@v1.17.1
+      - name: Install and Connect Cloudflare Warp
+        run: |
+          brew install --cask cloudflare-warp
+          # Allow the background service to start
+          sleep 5
+          # Register and connect with TOS auto-accepted
+          warp-cli --accept-tos registration new
+          warp-cli --accept-tos connect
+          echo "Verifying Warp connection..."
+          curl -s https://www.cloudflare.com/cdn-cgi/trace | grep warp
 
       - name: Create macOS image
         id: create_image
